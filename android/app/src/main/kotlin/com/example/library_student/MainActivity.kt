@@ -1,4 +1,4 @@
-package com.example.library_student
+package com.library_student
 
 import io.flutter.embedding.android.FlutterActivity
 

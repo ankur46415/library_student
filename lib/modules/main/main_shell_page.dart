@@ -42,7 +42,7 @@ class MainShellPage extends GetView<MainShellController> {
         bottomNavigationBar: SafeArea(
           top: false,
           child: Padding(
-            padding: const EdgeInsets.only(left: 6,right: 6,bottom: 8),
+            padding: const EdgeInsets.only(left: 6, right: 6, bottom: 8),
             child: Container(
               decoration: BoxDecoration(
                 color: AppColors.card,

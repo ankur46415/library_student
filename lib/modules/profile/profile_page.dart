@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../core/app_colors.dart';
 import '../../core/app_text_styles.dart';
-import '../../routes/app_routes.dart';
+import '../auth/auth_controller.dart';
+import 'profile_controller.dart';
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends GetView<ProfileController> {
   const ProfilePage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    Get.put(ProfileController());
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -16,22 +19,55 @@ class ProfilePage extends StatelessWidget {
         elevation: 0,
         title: Text('Profile', style: AppTextStyles.subheading),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            _header(),
-            const SizedBox(height: 14),
-            _infoCard(),
-            const SizedBox(height: 14),
-            _settingsCard(),
-          ],
-        ),
-      ),
+      body: Obx(() {
+        if (controller.isLoading.value) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (controller.errorMessage.value.isNotEmpty) {
+          return Center(
+            child: Text(
+              controller.errorMessage.value,
+              style: AppTextStyles.body,
+              textAlign: TextAlign.center,
+            ),
+          );
+        }
+
+        final user = controller.userData.value ?? {};
+        final student = controller.studentData.value ?? {};
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              _header(user: user, student: student),
+              const SizedBox(height: 14),
+              _infoCard(user: user, student: student),
+              const SizedBox(height: 14),
+              _settingsCard(),
+            ],
+          ),
+        );
+      }),
     );
   }
 
-  Widget _header() {
+  Widget _header({
+    required Map<String, dynamic> user,
+    required Map<String, dynamic> student,
+  }) {
+    final name = student['name'] ?? student['fullName'] ?? user['name'] ?? 'Student';
+    final seat = student['seat'] ?? student['seatNumber'];
+    final libraryName = student['libraryName'] ?? user['libraryName'] ?? user['libraryId'];
+
+    String subtitle = '';
+    if (seat != null && libraryName != null) {
+      subtitle = 'Seat $seat \u2022 $libraryName';
+    } else if (libraryName != null) {
+      subtitle = '$libraryName';
+    }
+
     return Column(
       children: [
         Stack(
@@ -56,14 +92,34 @@ class ProfilePage extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 8),
-        Text('Ankit Sharma', style: AppTextStyles.subheading.copyWith(fontSize: 18)),
-        const SizedBox(height: 2),
-        Text('Seat A‑12 • Reader’s Paradise', style: AppTextStyles.body.copyWith(fontSize: 13, color: AppColors.textSecondary)),
+        Text(
+          name,
+          style: AppTextStyles.subheading.copyWith(fontSize: 18),
+        ),
+        if (subtitle.isNotEmpty) ...[
+          const SizedBox(height: 2),
+          Text(
+            subtitle,
+            style: AppTextStyles.body.copyWith(
+              fontSize: 13,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
       ],
     );
   }
 
-  Widget _infoCard() {
+  Widget _infoCard({
+    required Map<String, dynamic> user,
+    required Map<String, dynamic> student,
+  }) {
+    final email = user['email'] ?? '-';
+    final linkedUserId = user['linkedUserId'] ?? '-';
+    final phone = student['mobile'] ?? student['phone'] ?? student['contact'] ?? '-';
+    final libraryName = student['libraryName'] ?? user['libraryName'] ?? user['libraryId'] ?? '-';
+    final plan = student['plan'] ?? student['planType'] ?? 'N/A';
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -79,11 +135,15 @@ class ProfilePage extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _infoRow('Mobile number', '+91 98xx xxxx xx'),
+          _infoRow('Email', email.toString()),
           const Divider(height: 20),
-          _infoRow('Library name', 'Reader’s Paradise Library'),
+          _infoRow('Student ID', linkedUserId.toString()),
           const Divider(height: 20),
-          _infoRow('Plan type', 'Monthly'),
+          _infoRow('Mobile number', phone.toString()),
+          const Divider(height: 20),
+          _infoRow('Library name', libraryName.toString()),
+          const Divider(height: 20),
+          _infoRow('Plan type', plan.toString()),
         ],
       ),
     );
@@ -93,8 +153,20 @@ class ProfilePage extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: AppTextStyles.label.copyWith(fontSize: 13, color: AppColors.textSecondary)),
-        Text(value, style: AppTextStyles.subheading.copyWith(fontSize: 14)),
+        Text(
+          label,
+          style: AppTextStyles.label.copyWith(
+            fontSize: 13,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        Flexible(
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            style: AppTextStyles.subheading.copyWith(fontSize: 14),
+          ),
+        ),
       ],
     );
   }
@@ -120,9 +192,18 @@ class ProfilePage extends StatelessWidget {
           _settingsTile(icon: Icons.support_agent_rounded, label: 'Help & support'),
           const SizedBox(height: 6),
           TextButton.icon(
-            onPressed: () => Get.offAllNamed(AppRoutes.login),
+            onPressed: () {
+              final authController = Get.find<AuthController>();
+              authController.signOut();
+            },
             icon: const Icon(Icons.logout_rounded, color: AppColors.danger),
-            label: const Text('Logout', style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.w600)),
+            label: const Text(
+              'Logout',
+              style: TextStyle(
+                color: AppColors.danger,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ],
       ),
@@ -144,7 +225,10 @@ class ProfilePage extends StatelessWidget {
             ),
             const SizedBox(width: 14),
             Expanded(
-              child: Text(label, style: AppTextStyles.body.copyWith(color: AppColors.textPrimary)),
+              child: Text(
+                label,
+                style: AppTextStyles.body.copyWith(color: AppColors.textPrimary),
+              ),
             ),
             const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
           ],

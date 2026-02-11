@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 
 import '../../../core/app_colors.dart';
 import '../../../core/app_text_styles.dart';
-import '../../../routes/app_routes.dart';
+import '../auth_controller.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
@@ -57,110 +57,76 @@ class LoginPage extends StatelessWidget {
               ),
               const SizedBox(height: 32),
               // 🧾 LOGIN CARD
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: AppColors.card,
-                  borderRadius: BorderRadius.circular(22),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // LABEL
-                    Text(
-                      'Mobile Number',
-                      style: AppTextStyles.label,
-                    ),
-                    const SizedBox(height: 10),
-                    // INPUT
-                    TextField(
-                      controller: phoneCtrl,
-                      keyboardType: TextInputType.phone,
-                      decoration: InputDecoration(
-                        prefixIcon: const Icon(Icons.phone_android),
-                        prefixText: '+91 ',
-                        filled: true,
-                        fillColor: AppColors.background,
-                        hintText: '9876 543 210',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide.none,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 14,
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: AppColors.card,
+                    borderRadius: BorderRadius.circular(22),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      const Text(
+                        'Sign in to continue',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 22),
-                    // BUTTON
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                          elevation: 4,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                        onPressed: () {
-                          Get.toNamed(AppRoutes.otp);
-                        },
-                        child: const Text(
-                          'Continue',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 15,
-                            letterSpacing: 0.3,
-                          ),
-                        ),
+                      const SizedBox(height: 20),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: Obx(() {
+                          final authController = Get.find<AuthController>();
+                          return ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.black87,
+                              elevation: 2,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                                side: BorderSide(color: Colors.grey.shade300),
+                              ),
+                            ),
+                            icon: authController.isLoading.value
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  )
+                                : Image.asset(
+                                    'assets/images/google_logo.png', // Assuming asset exists, otherwise use Icon
+                                    height: 24,
+                                    errorBuilder: (context, error, stackTrace) =>
+                                        const Icon(Icons.login, color: Colors.blue),
+                                  ),
+                            onPressed: authController.isLoading.value
+                                ? null
+                                : () {
+                                    authController.signInWithGoogle();
+                                  },
+                            label: Text(
+                              authController.isLoading.value
+                                  ? 'Signing in...'
+                                  : 'Sign in with Google',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
+                              ),
+                            ),
+                          );
+                        }),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    // DIVIDER
-                    Row(
-                      children: [
-                        Expanded(child: Divider(color: Colors.grey.shade300)),
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 8),
-                          child: Text(
-                            'Secure Login',
-                            style: TextStyle(fontSize: 11),
-                          ),
-                        ),
-                        Expanded(child: Divider(color: Colors.grey.shade300)),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    // SECURITY
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.lock_outline,
-                          size: 16,
-                          color: Colors.grey,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Your data is protected',
-                          style: AppTextStyles.label,
-                        ),
-                      ],
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
               const SizedBox(height: 30),
               // 📜 FOOTER
               Center(

@@ -3,13 +3,14 @@ import 'package:get/get.dart';
 
 import '../../../core/app_colors.dart';
 import '../../../core/app_text_styles.dart';
-import '../../../routes/app_routes.dart';
+import 'link_student_controller.dart';
 
 class LinkStudentPage extends StatelessWidget {
   const LinkStudentPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final controller = Get.put(LinkStudentController());
     final TextEditingController idCtrl = TextEditingController();
 
     return Scaffold(
@@ -89,7 +90,7 @@ class LinkStudentPage extends StatelessWidget {
                       decoration: InputDecoration(
                         prefixIcon: const Icon(Icons.badge_outlined),
 
-                        hintText: 'LIB-2024-001',
+                        hintText: 'libraryId:studentId or studentId',
 
                         filled: true,
                         fillColor: AppColors.background,
@@ -118,7 +119,7 @@ class LinkStudentPage extends StatelessWidget {
 
                     // HELPER
                     Text(
-                      'Ask your library admin for correct Student ID',
+                      'Format: "libraryId:studentId" (e.g., "abc123:PCdb9yxVm4lHHmCsdnhG") or just "studentId"',
                       style: AppTextStyles.label,
                     ),
 
@@ -172,7 +173,7 @@ class LinkStudentPage extends StatelessWidget {
                     const SizedBox(height: 22),
 
                     // MAIN BUTTON
-                    SizedBox(
+                    Obx(() => SizedBox(
                       width: double.infinity,
                       height: 48,
 
@@ -188,21 +189,50 @@ class LinkStudentPage extends StatelessWidget {
                         ),
                       ),
 
-                        onPressed: () {
-                          Get.offAllNamed(AppRoutes.main);
-                        },
+                        onPressed: controller.isLoading.value
+                            ? null
+                            : () async {
+                                if (idCtrl.text.trim().isEmpty) {
+                                  Get.snackbar('Error', 'Please enter Student ID');
+                                  return;
+                                }
+                                await controller.linkStudent(idCtrl.text.trim());
+                              },
 
-                        child: const Text(
-                          'Link & Continue',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 15,
-                          ),
-                        ),
+                        child: controller.isLoading.value
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              )
+                            : const Text(
+                                'Link & Continue',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 15,
+                                ),
+                              ),
                       ),
-                    ),
+                    )),
 
                     const SizedBox(height: 14),
+
+                    // ERROR MESSAGE
+                    Obx(() => controller.errorMessage.value.isNotEmpty
+                        ? Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Text(
+                              controller.errorMessage.value,
+                              style: AppTextStyles.label.copyWith(
+                                color: Colors.red,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          )
+                        : const SizedBox.shrink()),
 
                     // SECURITY NOTE
                     Row(

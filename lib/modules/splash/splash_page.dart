@@ -1,19 +1,57 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../core/app_colors.dart';
 import '../../core/app_text_styles.dart';
 import '../../routes/app_routes.dart';
+import '../../services/firebase_service.dart';
 
-class SplashPage extends StatelessWidget {
+class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    Future.delayed(const Duration(milliseconds: 1400), () {
-      Get.offAllNamed(AppRoutes.login);
-    });
+  State<SplashPage> createState() => _SplashPageState();
+}
 
+class _SplashPageState extends State<SplashPage> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseService _firebaseService = FirebaseService();
+
+  @override
+  void initState() {
+    super.initState();
+    _handleNavigation();
+  }
+
+  Future<void> _handleNavigation() async {
+    // Small splash delay
+    await Future.delayed(const Duration(milliseconds: 1400));
+
+    final user = _auth.currentUser;
+
+    // Not logged in → go to login
+    if (!mounted) return;
+    if (user == null) {
+      Get.offAllNamed(AppRoutes.login);
+      return;
+    }
+
+    // Logged in → check if linkedUserId exists
+    final linkedUserId = await _firebaseService.getLinkedUserId();
+    if (!mounted) return;
+
+    if (linkedUserId != null && linkedUserId.isNotEmpty) {
+      // Already linked → Home
+      Get.offAllNamed(AppRoutes.main);
+    } else {
+      // Not linked → Link student flow
+      Get.offAllNamed(AppRoutes.linkStudent);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
         child: Column(
